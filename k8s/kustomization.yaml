@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- namespace.yaml
+- configmap.yaml
+- api-gateway-deployment.yaml
+- api-gateway-service.yaml
+- api-gateway-hpa.yaml
+- ingress.yaml
+
+namespace: video-processor-gateway
+
+commonLabels:
+  project: video-processor
+  component: api-gateway

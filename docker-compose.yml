@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://auth-service:3002}
+      - VIDEO_SERVICE_URL=${VIDEO_SERVICE_URL:-http://video-processor-api:3000}
+    ports:
+      - "3001:3001"
+    networks:
+      - microservices-network
+    depends_on:
+      - auth-service-check
+      - video-service-check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/ || echo 'Gateway not ready'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    labels:
+      - "service=api-gateway"
+      - "environment=production"
+
+  # Service discovery helpers
+  auth-service-check:
+    image: curlimages/curl:latest
+    container_name: auth-service-check
+    command: >
+      sh -c "
+        echo 'Waiting for auth-service to be ready...'
+        until curl -f http://auth-service:3002/auth/verify 2>/dev/null || echo 'Auth service not ready yet'; do
+          echo 'Auth service is unavailable - sleeping'
+          sleep 2
+        done
+        echo 'Auth service is ready!'
+      "
+    networks:
+      - microservices-network
+    restart: "no"
+
+  video-service-check:
+    image: curlimages/curl:latest
+    container_name: video-service-check
+    command: >
+      sh -c "
+        echo 'Waiting for video-processor-api to be ready...'
+        until curl -f http://video-processor-api:3000/api/v1/health 2>/dev/null || echo 'Video service not ready yet'; do
+          echo 'Video service is unavailable - sleeping'
+          sleep 2
+        done
+        echo 'Video service is ready!'
+      "
+    networks:
+      - microservices-network
+    restart: "no"
+
+networks:
+  microservices-network:
+    name: microservices-network
+    driver: bridge
+    external: true

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway-config
+  namespace: video-processor-gateway
+data:
+  NODE_ENV: "production"
+  PORT: "3001"
+  AUTH_SERVICE_URL: "http://auth-service.video-processor-auth.svc.cluster.local:3002"
+  VIDEO_SERVICE_URL: "http://video-processor-api.video-processor.svc.cluster.local:3000"
